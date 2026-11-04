@@ -1,0 +1,52 @@
+# ============================================================================
+# FICHEIRO DE CENA VETORIAL - EXEMPLO (.vsc)
+# 1º Projeto de Algoritmos e Estruturas de Dados (2026/2027)
+# ============================================================================
+#
+# Formato do Ficheiro:
+#   SCENE width height bgR bgG bgB
+#   CIRC  id zIndex r g b alpha centerX centerY radius
+#   RECT  id zIndex r g b alpha topLeftX topLeftY width height
+#   SEG   id zIndex r g b alpha p1X p1Y p2X p2Y
+#   POLY  id zIndex r g b alpha numVertices x0 y0 x1 y1 ...
+#
+
+# RESOLUÇÃO E COR DO FUNDO (Céu azul claro)
+SCENE 800 600 210 235 250
+
+# PLANO INFERIOR / RELVADO (Verde)
+RECT 1 1 34 139 34 1.000 0.00 400.00 800.00 200.00
+
+# SOL (Amarelo no canto superior direito)
+CIRC 2 2 255 215 0 0.900 680.00 120.00 65.00
+
+# RAIOS DO SOL (Linhas Amarelas Semi-Transparentes)
+SEG 3 1 255 215 0 0.400 680.00 120.00 580.00 180.00
+SEG 4 1 255 215 0 0.400 680.00 120.00 680.00 240.00
+SEG 5 1 255 215 0 0.400 680.00 120.00 550.00 120.00
+
+# NUVEM (Conjunto de Círculos Brancos com Alpha Blending)
+CIRC 6 3 255 255 255 0.700 200.00 120.00 45.00
+CIRC 7 3 255 255 255 0.800 240.00 110.00 55.00
+CIRC 8 3 255 255 255 0.700 280.00 120.00 45.00
+
+# CASA - CORPO (Retângulo Bege)
+RECT 9 4 222 184 135 1.000 300.00 320.00 200.00 150.00
+
+# CASA - TELHADO (Polígono Triangular Vermelho)
+POLY 10 5 178 34 34 1.000 3 280.00 320.00 520.00 320.00 400.00 220.00
+
+# CASA - PORTA (Retângulo Castanho Escuro)
+RECT 11 6 139 69 19 1.000 375.00 390.00 50.00 80.00
+
+# CASA - JANELA (Quadrado Azul Transparente)
+RECT 12 6 135 206 250 0.750 330.00 350.00 40.00 40.00
+
+# ÁRVORE - TRONCO (Retângulo Castanho)
+RECT 13 4 101 67 33 1.000 140.00 350.00 30.00 120.00
+
+# ÁRVORE - COPA (Círculo Verde Escuro)
+CIRC 14 5 46 139 87 0.850 155.00 310.00 70.00
+
+# ELEMENTO ARTÍSTICO / ESTRELA DE DECORAÇÃO (Polígono 5 Vértices)
+POLY 15 10 238 130 238 0.750 5 600.00 350.00 630.00 420.00 550.00 380.00 650.00 380.00 570.00 420.00
