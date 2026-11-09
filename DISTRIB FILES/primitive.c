@@ -201,46 +201,72 @@ Primitive* primitive_create_circle(int id, Point center, double radius,
 Primitive* primitive_create_rectangle(int id, Point top_left, double width,
                                       double height, Color color, double alpha,
                                       int z_index) {
-  /* TODO: Student Implementation
-   */
-  (void)id;
-  (void)top_left;
-  (void)width;
-  (void)height;
-  (void)color;
-  (void)alpha;
-  (void)z_index;
-  return NULL;
+
+  if  (width <= 0.0 ||  height <=0.0 || alpha > 1.0 ){
+    return NULL;
+  }
+
+  Primitive* p =
+      primitive_allocate_common( id, PRIM_RECTANGLE, color, alpha, z_index);
+  if (p == NULL) {
+    return NULL;
+  }
+
+  p->geom.rectangle.width = width;
+  p->geom.rectangle.height = height;
+  p->geom.rectangle.top_left = top_left;
+
+  primitive_update_aabb(p);
+
+  return p;
 }
 
 Primitive* primitive_create_segment(int id, Point p1, Point p2, Color color,
                                     double alpha, int z_index) {
-  /* TODO: Student Implementation
-   */
-  (void)id;
-  (void)p1;
-  (void)p2;
-  (void)color;
-  (void)alpha;
-  (void)z_index;
-  return NULL;
+  
+  if (alpha > 1.0 ){
+    return NULL;
+  } 
+  
+  Primitive* p =
+      primitive_allocate_common(id, PRIM_SEGMENT, color, alpha, z_index);
+  if (p == NULL){
+    return NULL;
+  }
+
+  p->geom.segment.p1 = p1;
+  p->geom.segment.p2 = p2;
+
+  primitive_update_aabb(p);
+
+  return p;
 }
 
 Primitive* primitive_create_polygon(int id, Color color, double alpha,
                                     int z_index) {
-  /* TODO: Student Implementation
-   */
-  (void)id;
-  (void)color;
-  (void)alpha;
-  (void)z_index;
-  return NULL;
+  if (alpha > 1.0){
+    return NULL;
+  }  
+  Primitive* p =
+      primitive_allocate_common(id, PRIM_POLYGON, color, alpha, z_index);
+  if (p == NULL){
+    return NULL;
+  }
+
+  primitive_update_aabb(p);
+
+  return p;
 }
 
 void primitive_destroy(Primitive* p) {
-  /* TODO: Student Implementation
-   */
-  (void)p;
+  if (p == NULL){
+    return;
+  }
+  if(p->type == PRIM_POLYGON){
+    free(p->geom.polygon.vertices);
+  }
+  
+  free(p);
 }
 
 // ============================================================================
