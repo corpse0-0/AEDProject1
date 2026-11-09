@@ -316,7 +316,7 @@ bool polygon_remove_vertex(Primitive* p, size_t index) {
   }
   
   poly->num_vertices--;
-  
+
   p->is_aabb_dirty = true;
 
   return true;
@@ -340,19 +340,51 @@ void primitive_update_aabb(Primitive* p) {
       break;
 
     case PRIM_RECTANGLE:
-      /* TODO: Compute AABB for Rectangle
-       */
+      p->aabb.min.x = p->geom.rectangle.top_left.x;
+      p->aabb.min.y = p->geom.rectangle.top_left.y - p->geom.rectangle.height;
+      p->aabb.max.x = p->geom.rectangle.top_left.x + p->geom.rectangle.width;
+      p->aabb.max.y = p->geom.rectangle.top_left.y;
       break;
 
     case PRIM_SEGMENT:
-      /* TODO: Compute AABB for Segment
-       */
+      p->aabb.min.x = p->geom.segment.p1.x;
+      p->aabb.min.y = p->geom.segment.p1.y;
+      p->aabb.max.x = p->geom.segment.p2.x;
+      p->aabb.max.y = p->geom.segment.p2.y;
       break;
 
     case PRIM_POLYGON:
-      /* TODO: Compute AABB for Polygon
-       * Iterate vertices array to find min/max coordinates
-       */
+      PolygonGeom* poly = &(p->geom.polygon);
+      
+      if (poly->num_vertices == 0) {
+        //empty polygon
+        p->aabb.min.x = 0;
+        p->aabb.min.y = 0;
+        p->aabb.max.x = 0;
+        p->aabb.max.y = 0;
+        break;
+      }
+
+      p->aabb.min.x = poly->vertices[0].x;//vertex 0
+      p->aabb.min.y = poly->vertices[0].y;
+      p->aabb.max.x = poly->vertices[0].x;
+      p->aabb.max.y = poly->vertices[0].y;
+
+      // cicle through the rest to find the lowest and highest x and y
+      for (size_t i = 1; i < poly->num_vertices; i++) {
+        if (poly->vertices[i].x < p->aabb.min.x) {
+          p->aabb.min.x = poly->vertices[i].x;
+        }
+        if (poly->vertices[i].y < p->aabb.min.y) {
+          p->aabb.min.y = poly->vertices[i].y;
+        }
+        if (poly->vertices[i].x > p->aabb.max.x) {
+          p->aabb.max.x = poly->vertices[i].x;
+        }
+        if (poly->vertices[i].y > p->aabb.max.y) {
+          p->aabb.max.y = poly->vertices[i].y;
+        }
+      }
       break;
   }
 
