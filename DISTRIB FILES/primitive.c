@@ -274,19 +274,52 @@ void primitive_destroy(Primitive* p) {
 // ============================================================================
 
 bool polygon_add_vertex(Primitive* p, Point pt) {
-  /* TODO: Student Implementation
-   */
-  (void)p;
-  (void)pt;
-  return false;
+  if(p == NULL || p->type != PRIM_POLYGON){
+    return false;
+  }
+
+  PolygonGeom* poly = &(p->geom.polygon);
+  
+  if (poly->num_vertices >= poly->capacity) {
+      size_t new_capacity = (poly->capacity == 0) ? 4 : poly->capacity * 2;
+      Point* new_vertices = (Point*)realloc(poly->vertices, new_capacity * sizeof(Point));
+        
+      if (new_vertices == NULL) {
+          return false; // Allocation failed
+      }
+        
+      poly->vertices = new_vertices;
+      poly->capacity = new_capacity;
+  }
+  // Append the new vertex and increment count
+  poly->vertices[poly->num_vertices++] = pt;
+
+  // Mark the bounding box as dirty per your documentation
+  p->is_aabb_dirty = true;
+
+  return true;
 }
 
 bool polygon_remove_vertex(Primitive* p, size_t index) {
-  /* TODO: Student Implementation
-   */
-  (void)p;
-  (void)index;
-  return false;
+  if(p == NULL || p->type != PRIM_POLYGON || index >= p->geom.polygon.num_vertices){
+    return false;
+  }
+
+  PolygonGeom* poly = &(p->geom.polygon);
+  
+  if (index >= poly->num_vertices) {
+    return false;
+  }
+
+  for (size_t i = index; i < poly->num_vertices - 1; i++) {
+      poly->vertices[i] = poly->vertices[i + 1];
+  }
+  
+  poly->num_vertices--;
+  
+  p->is_aabb_dirty = true;
+
+  return true;
 }
 
 // ============================================================================
