@@ -282,7 +282,7 @@ static void insertion_sort_by_z(Primitive** arr, size_t count,
     }
     arr[j] = key;
   }
-  // TODO: Implement Insertion Sort by z_index
+
   // - Handle edge cases (count < 2).
   // - Iterate through elements from index 1 to count - 1.
   // - Compare arr[j]->z_index with key->z_index.
@@ -335,7 +335,6 @@ static void merge_by_z(Primitive** arr, Primitive** temp_arr, size_t left,
     if(stats) stats->swaps++;
   }
   
-  // TODO: Implement Merge step for MergeSort
   // - Merge sorted halves [left..mid] and [mid+1..right] into temp_arr.
   // - Compare z_index of primitives and increment stats->comparisons.
   // - Increment stats->swaps when copying elements to temp_arr and back to arr.
