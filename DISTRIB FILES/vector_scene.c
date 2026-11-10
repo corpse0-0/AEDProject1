@@ -151,10 +151,6 @@ VectorScene* vector_scene_create(int width, int height, Color bg_color) {
   scene->next_auto_id=0;
 
   return scene;
-  /* TODO: Student Implementation
-   * 1. Allocate the VectorScene data structure.
-   * 2. Set capacity = INITIAL_SCENE_CAPACITY.
-   */
 }
 
 void vector_scene_destroy(VectorScene* scene) {
@@ -168,10 +164,6 @@ void vector_scene_destroy(VectorScene* scene) {
 
   free(scene->primitives);
   free(scene);
-  /* TODO: Student Implementation
-   * 1. Destroy each scene primitive.
-   * 2. Free all allocated memory.
-   */
 }
 
 // ============================================================================
@@ -200,16 +192,6 @@ int vector_scene_add_primitive(VectorScene* scene, Primitive* p){
   primitive_update_aabb(p);
 
   return p->id;
-  /* TODO: Student Implementation
-   * 1. Check if scene->count == scene->capacity.
-   * 2. If full, expand capacity using realloc.
-   * 3. Auto-assign p->id if p->id < 0 using scene->next_auto_id++.
-   * 4. Append p to primitives array.
-   * 5. Call primitive_update_aabb(p).
-   * 6. Return assigned primitive ID.
-   * NOTE: Scene TAKES OWNERSHIP of pointer p (it no longer belongs to the
-   * client).
-   */
 }
 
 bool vector_scene_remove_primitive(VectorScene* scene, int id) {
@@ -228,11 +210,6 @@ bool vector_scene_remove_primitive(VectorScene* scene, int id) {
       return true;
     }
   }
-
-
-  /* TODO: Student Implementation
-   * 1. Do not forget to shif left remaining primitives, if needed.
-   */
   return false;
 }
 
@@ -252,8 +229,6 @@ bool vector_scene_translate_primitive(VectorScene* scene, int id, double dx,
       return true;
     }
   }
-  /* TODO: Student Implementation
-   */
   return false;
 }
 
@@ -268,8 +243,6 @@ bool vector_scene_set_z_index(VectorScene* scene, int id, int new_z_index) {
       return true;
     }
   }
-  /* TODO: Student Implementation
-   */
   return false;
 }
 
