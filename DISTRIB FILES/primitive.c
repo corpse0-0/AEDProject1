@@ -202,7 +202,7 @@ Primitive* primitive_create_rectangle(int id, Point top_left, double width,
                                       double height, Color color, double alpha,
                                       int z_index) {
 
-  if  (width <= 0.0 ||  height <=0.0 || alpha > 1.0 ){
+  if  (width <= 0.0 ||  height <=0.0 || alpha > 1.0 || alpha < 0.0 ){
     return NULL;
   }
 
@@ -224,7 +224,7 @@ Primitive* primitive_create_rectangle(int id, Point top_left, double width,
 Primitive* primitive_create_segment(int id, Point p1, Point p2, Color color,
                                     double alpha, int z_index) {
   
-  if (alpha > 1.0 ){
+  if (alpha > 1.0 || alpha < 0.0){
     return NULL;
   } 
   
@@ -244,7 +244,7 @@ Primitive* primitive_create_segment(int id, Point p1, Point p2, Color color,
 
 Primitive* primitive_create_polygon(int id, Color color, double alpha,
                                     int z_index) {
-  if (alpha > 1.0){
+  if (alpha > 1.0 || alpha < 0.0){
     return NULL;
   }  
   Primitive* p =
@@ -349,10 +349,10 @@ void primitive_update_aabb(Primitive* p) {
       break;
 
     case PRIM_SEGMENT:
-      p->aabb.min.x = p->geom.segment.p1.x;
-      p->aabb.min.y = p->geom.segment.p1.y;
-      p->aabb.max.x = p->geom.segment.p2.x;
-      p->aabb.max.y = p->geom.segment.p2.y;
+      p->aabb.min.x = fmin(p->geom.segment.p1.x, p->geom.segment.p2.x);
+      p->aabb.min.y = fmin(p->geom.segment.p1.y, p->geom.segment.p2.y);
+      p->aabb.max.x = fmax(p->geom.segment.p1.x, p->geom.segment.p2.x);
+      p->aabb.max.y = fmax(p->geom.segment.p1.y, p->geom.segment.p2.y);
       break;
 
     case PRIM_POLYGON:
@@ -431,50 +431,54 @@ void primitive_translate(Primitive* p, double dx, double dy) {
 }
 
 void primitive_scale(Primitive* p, double factor) {
-  if (p == NULL || factor <= 0.0) {
-    return;
-
-  }
-
-  PolygonGeom* poly = &(p->geom.polygon);
-
-
-  double x_meio = (p->aabb.max.x-p->aabb.min.x)/2.0;
-  double y_meio = (p->aabb.max.y-p->aabb.min.y)/2.0;
-
-  double x_medio = (p->geom.segment.p1.x+p->geom.segment.p2.x)/2.0;
-  double y_medio = (p->geom.segment.p1.y+p->geom.segment.p2.y)/2.0;
-
   switch (p->type) {
     case PRIM_CIRCLE:
-      p->geom.circle.radius*=factor;
-    break;
+      /* o centro mantém-se, só o raio muda */
+      p->geom.circle.radius *= factor;
+      break;
 
-    case PRIM_RECTANGLE:
-      p->geom.rectangle.height*=factor;
-      p->geom.rectangle.width*=factor;
-    break;
+    case PRIM_RECTANGLE: {
+      /* escala em torno do centro do retângulo */
+      RectGeom* r = &(p->geom.rectangle);
+      double cx = r->top_left.x + r->width / 2.0;
+      double cy = r->top_left.y + r->height / 2.0;
+      r->width *= factor;
+      r->height *= factor;
+      r->top_left.x = cx - r->width / 2.0;
+      r->top_left.y = cy - r->height / 2.0;
+      break;
+    }
 
-    case PRIM_SEGMENT:
+    case PRIM_SEGMENT: {
+      /* escala em torno do ponto médio */
+      SegmentGeom* s = &(p->geom.segment);
+      double cx = (s->p1.x + s->p2.x) / 2.0;
+      double cy = (s->p1.y + s->p2.y) / 2.0;
+      s->p1.x = cx + (s->p1.x - cx) * factor;
+      s->p1.y = cy + (s->p1.y - cy) * factor;
+      s->p2.x = cx + (s->p2.x - cx) * factor;
+      s->p2.y = cy + (s->p2.y - cy) * factor;
+      break;
+    }
 
-      
-      p->geom.segment.p1.x = x_medio + (p->geom.segment.p1.x - x_medio) * factor;
-      p->geom.segment.p1.y = y_medio + (p->geom.segment.p1.y - y_medio) * factor;
-      p->geom.segment.p2.x = x_medio + (p->geom.segment.p2.x - x_medio) * factor;
-      p->geom.segment.p2.y = y_medio + (p->geom.segment.p2.y - y_medio) * factor;
-    break;
-
-    case PRIM_POLYGON:
-
-
-      for (size_t i = 0; i < poly->num_vertices; i++) {
-        poly->vertices[i].x = x_meio + (poly->vertices[i].x - x_meio) * factor;
-        poly->vertices[i].y = y_meio + (poly->vertices[i].y - y_meio) * factor;
+    case PRIM_POLYGON: {
+      PolygonGeom* poly = &(p->geom.polygon);
+      if (poly->num_vertices == 0) {
+        break;
       }
-    break;
+      /* centro da AABB atual (atualizada primeiro, pode estar desatualizada) */
+      BoundingBox box = primitive_get_aabb(p);
+      double cx = (box.min.x + box.max.x) / 2.0;
+      double cy = (box.min.y + box.max.y) / 2.0;
+      for (size_t i = 0; i < poly->num_vertices; i++) {
+        poly->vertices[i].x = cx + (poly->vertices[i].x - cx) * factor;
+        poly->vertices[i].y = cy + (poly->vertices[i].y - cy) * factor;
+      }
+      break;
+    }
   }
 
-  p->is_aabb_dirty=true;
+  p->is_aabb_dirty = true;
 }
 
 bool primitive_contains_point(const Primitive* p, Point pt) {
