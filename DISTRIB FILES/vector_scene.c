@@ -131,6 +131,17 @@ VectorScene* vector_scene_create(int width, int height, Color bg_color) {
   if (width <= 0 || height <= 0) {
     return NULL;
   }
+  
+  VectorScene *scene = malloc(sizeof(VectorScene));
+  if (scene == NULL){
+    return NULL;
+  } 
+  
+  scene->width=width;
+  scene->height=height;
+  scene->bg_color=bg_color;
+  scene->capacity=INITIAL_SCENE_CAPACITY;
+
 
   /* TODO: Student Implementation
    * 1. Allocate the VectorScene data structure.
