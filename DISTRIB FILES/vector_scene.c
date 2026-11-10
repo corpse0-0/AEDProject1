@@ -307,18 +307,39 @@ static void insertion_sort_by_z(Primitive** arr, size_t count,
  */
 static void merge_by_z(Primitive** arr, Primitive** temp_arr, size_t left,
                        size_t mid, size_t right, SortStats* stats) {
+  size_t i = left;
+  size_t j = mid + 1;
+  size_t k = left;
+
+  while (i <= mid && j <= right) {
+    if (stats) stats->comparisons++;                 /* uma comparação de z_index */
+    if (arr[i]->z_index <= arr[j]->z_index) {        /* <= para ser estável */
+      temp_arr[k++] = arr[i++];
+    } else {
+      temp_arr[k++] = arr[j++];
+    }
+    if (stats) stats->swaps++;                       /* uma cópia para o temp */
+  }
+
+  while (i<=mid){
+    temp_arr[k++] = arr[i++];
+    if(stats) stats->swaps++;
+  }
+  while (j<=right){
+    temp_arr[k++] = arr[j++];
+    if(stats) stats->swaps++;
+  }
+
+  for(size_t l = left; l <= right; l++){
+    arr[l] = temp_arr[l];
+    if(stats) stats->swaps++;
+  }
+  
   // TODO: Implement Merge step for MergeSort
   // - Merge sorted halves [left..mid] and [mid+1..right] into temp_arr.
   // - Compare z_index of primitives and increment stats->comparisons.
   // - Increment stats->swaps when copying elements to temp_arr and back to arr.
   // - Copy merged elements back from temp_arr to arr[left..right].
-
-  (void)arr;
-  (void)temp_arr;
-  (void)left;
-  (void)mid;
-  (void)right;
-  (void)stats;
 }
 
 /**
