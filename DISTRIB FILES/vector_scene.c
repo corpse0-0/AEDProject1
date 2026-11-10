@@ -263,6 +263,25 @@ bool vector_scene_set_z_index(VectorScene* scene, int id, int new_z_index) {
  */
 static void insertion_sort_by_z(Primitive** arr, size_t count,
                                 SortStats* stats) {
+  if (arr == NULL || count < 2) {
+    return;
+  }
+  
+  for (size_t i = 1; i < count; i++){
+    Primitive* key = arr[i];
+    size_t j = i-1;
+
+    while(j > 0){
+      if(stats) stats->comparisons++;
+      if(arr[j-1]->z_index <= key->z_index){
+        break;
+      }
+      arr[j + 1] = arr[j];
+      if(stats) stats->swaps++;
+      j--;
+    }
+    arr[j] = key;
+  }
   // TODO: Implement Insertion Sort by z_index
   // - Handle edge cases (count < 2).
   // - Iterate through elements from index 1 to count - 1.
