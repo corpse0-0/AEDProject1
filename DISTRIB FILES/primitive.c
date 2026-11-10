@@ -330,7 +330,9 @@ void primitive_update_aabb(Primitive* p) {
   if (p == NULL || !p->is_aabb_dirty) {
     return;
   }
-
+  
+  PolygonGeom* poly = &(p->geom.polygon);
+  
   switch (p->type) {
     case PRIM_CIRCLE:
       p->aabb.min.x = p->geom.circle.center.x - p->geom.circle.radius;
@@ -354,7 +356,7 @@ void primitive_update_aabb(Primitive* p) {
       break;
 
     case PRIM_POLYGON:
-      PolygonGeom* poly = &(p->geom.polygon);
+
       
       if (poly->num_vertices == 0) {
         //empty polygon
@@ -396,6 +398,8 @@ void primitive_translate(Primitive* p, double dx, double dy) {
     return;
   }
 
+  PolygonGeom* poly = &(p->geom.polygon);
+
   switch (p->type) {
     case PRIM_CIRCLE:
       p->geom.circle.center.x+=dx;
@@ -415,7 +419,6 @@ void primitive_translate(Primitive* p, double dx, double dy) {
     break;
 
     case PRIM_POLYGON:
-      PolygonGeom* poly = &(p->geom.polygon);
       for (size_t i = 0; i < poly->num_vertices; i++) {
         poly->vertices[i].x += dx;
         poly->vertices[i].y += dy;
@@ -430,15 +433,19 @@ void primitive_translate(Primitive* p, double dx, double dy) {
 void primitive_scale(Primitive* p, double factor) {
   if (p == NULL || factor <= 0.0) {
     return;
+
   }
 
-  /* TODO: Student Implementation
-   * Scale geometry based on p->type:
-   * - PRIM_POLYGON: scale vertices relative to polygon bounding box center
-   * Set p->is_aabb_dirty = true
-   */
+  PolygonGeom* poly = &(p->geom.polygon);
 
-     switch (p->type) {
+
+  double x_meio = (p->aabb.max.x-p->aabb.min.x)/2.0;
+  double y_meio = (p->aabb.max.y-p->aabb.min.y)/2.0;
+
+  double x_medio = (p->geom.segment.p1.x+p->geom.segment.p2.x)/2.0;
+  double y_medio = (p->geom.segment.p1.y+p->geom.segment.p2.y)/2.0;
+
+  switch (p->type) {
     case PRIM_CIRCLE:
       p->geom.circle.radius*=factor;
     break;
@@ -449,24 +456,20 @@ void primitive_scale(Primitive* p, double factor) {
     break;
 
     case PRIM_SEGMENT:
-      double x_medio = (p->geom.segment.p1.x+p->geom.segment.p2.x)/2.0;
-      double y_medio = (p->geom.segment.p1.y+p->geom.segment.p2.y)/2.0;
+
       
-      p->geom.segment.p1.x = x_medio + (p->geom.segment.p1.x - x_medio) * s;
-      p->geom.segment.p1.y = y_medio + (p->geom.segment.p1.y - y_medio) * s;
-      p->geom.segment.p2.x = x_medio + (p->geom.segment.p2.x - x_medio) * s;
-      p->geom.segment.p2.y = y_medio + (p->geom.segment.p2.y - y_medio) * s;
+      p->geom.segment.p1.x = x_medio + (p->geom.segment.p1.x - x_medio) * factor;
+      p->geom.segment.p1.y = y_medio + (p->geom.segment.p1.y - y_medio) * factor;
+      p->geom.segment.p2.x = x_medio + (p->geom.segment.p2.x - x_medio) * factor;
+      p->geom.segment.p2.y = y_medio + (p->geom.segment.p2.y - y_medio) * factor;
     break;
 
     case PRIM_POLYGON:
-      PolygonGeom* poly = &(p->geom.polygon);
 
-      double x_meio = (p->aabb.max.x-p->aabb.min.x)/2.0;
-      double y_meio = (p->aabb.max.y-p->aabb.min.y)/2.0;
 
       for (size_t i = 0; i < poly->num_vertices; i++) {
-        poly->vertices[i].x = x_meio + (poly->vertices[i].x - x_meio) * s;
-        poly->vertices[i].y = y_meio + (poly->vertices[i].y - y_meio) * s;
+        poly->vertices[i].x = x_meio + (poly->vertices[i].x - x_meio) * factor;
+        poly->vertices[i].y = y_meio + (poly->vertices[i].y - y_meio) * factor;
       }
     break;
   }
@@ -479,6 +482,8 @@ bool primitive_contains_point(const Primitive* p, Point pt) {
     return false;
   }
 
+  const PolygonGeom* poly = &(p->geom.polygon);
+
   // Narrow-phase exact geometric test dispatch
   switch (p->type) {
     case PRIM_CIRCLE:
@@ -486,22 +491,14 @@ bool primitive_contains_point(const Primitive* p, Point pt) {
                                         p->geom.circle.radius, pt);
 
     case PRIM_RECTANGLE:
-      /* TODO: Does rectangle contain point?
-       */
       return math_rect_contains_point(p->geom.rectangle.top_left, p->geom.rectangle.width,
                                        p->geom.rectangle.height, pt);
 
     case PRIM_SEGMENT:
-      /* TODO: Does segment contain point?
-       */
       return math_segment_contains_point(p->geom.segment.p1, p->geom.segment.p2, 1.0
                                          , pt);
 
     case PRIM_POLYGON:
-      /* TODO: Does polygon contain point?
-       */
-      PolygonGeom* poly = &(p->geom.polygon);
-
       return math_polygon_contains_point(poly->vertices, poly->num_vertices, pt);
   }
 
