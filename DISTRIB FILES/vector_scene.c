@@ -137,6 +137,12 @@ VectorScene* vector_scene_create(int width, int height, Color bg_color) {
     return NULL;
   } 
   
+  scene->primitives = malloc(INITIAL_SCENE_CAPACITY * sizeof(Primitive*));
+  if (scene->primitives == NULL) {
+    free(scene);
+    return NULL;
+  }
+
   scene->width=width;
   scene->height=height;
   scene->bg_color=bg_color;
@@ -144,7 +150,7 @@ VectorScene* vector_scene_create(int width, int height, Color bg_color) {
   scene->count=0;
   scene->next_auto_id=0;
 
-
+  return scene;
   /* TODO: Student Implementation
    * 1. Allocate the VectorScene data structure.
    * 2. Set capacity = INITIAL_SCENE_CAPACITY.

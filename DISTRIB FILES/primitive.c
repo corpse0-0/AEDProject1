@@ -343,9 +343,9 @@ void primitive_update_aabb(Primitive* p) {
 
     case PRIM_RECTANGLE:
       p->aabb.min.x = p->geom.rectangle.top_left.x;
-      p->aabb.min.y = p->geom.rectangle.top_left.y - p->geom.rectangle.height;
+      p->aabb.min.y = p->geom.rectangle.top_left.y;            // topo
       p->aabb.max.x = p->geom.rectangle.top_left.x + p->geom.rectangle.width;
-      p->aabb.max.y = p->geom.rectangle.top_left.y;
+      p->aabb.max.y = p->geom.rectangle.top_left.y + p->geom.rectangle.height;   // base
       break;
 
     case PRIM_SEGMENT:
@@ -431,6 +431,10 @@ void primitive_translate(Primitive* p, double dx, double dy) {
 }
 
 void primitive_scale(Primitive* p, double factor) {
+  if (p == NULL || factor <= 0.0) {
+    return;
+  }
+  
   switch (p->type) {
     case PRIM_CIRCLE:
       /* o centro mantém-se, só o raio muda */
