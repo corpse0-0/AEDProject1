@@ -289,10 +289,6 @@ static void insertion_sort_by_z(Primitive** arr, size_t count,
   // - Increment stats->comparisons for every z_index comparison made.
   // - Shift elements right and increment stats->swaps for every move.
   // - Insert key in its correct sorted position.
-
-  (void)arr;
-  (void)count;
-  (void)stats;
 }
 
 /**
