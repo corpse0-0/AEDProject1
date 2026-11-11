@@ -401,16 +401,40 @@ Primitive* vector_scene_pick_top_primitive(const VectorScene* scene, Point pt,
     return NULL;
   }
 
-  /* TODO: Student Implementation & Benchmark Study
-   * Reset stats (aabb_tests = 0, exact_tests = 0).
+  if (stats != NULL){
+    stats->aabb_tests = 0;
+    stats->exact_tests = 0;
+  }
+
+  for (size_t i = scene->count; i > 0; i--) {
+    Primitive* prim = scene->primitives[i - 1];
+
+    if(is_opt){
+      BoundingBox box = primitive_get_aabb(prim);
+      if(stats)stats->aabb_tests++;
+
+      double tol = (prim->type == PRIM_SEGMENT) ? 1.0 : 0.0;
+      if (pt.x < box.min.x - tol || pt.x > box.max.x + tol ||
+          pt.y < box.min.y - tol || pt.y > box.max.y + tol) {
+        continue;
+      }
+    }
+
+    if (stats) stats->exact_tests++;
+    if (primitive_contains_point(prim, pt)){
+      return prim;
+    }
+
+  }
+
+  return NULL;
+
+  /* Reset stats (aabb_tests = 0, exact_tests = 0).
    * Iterate primitives backward from top layer (highest z_index) to lowest.
    * Phase 1 (Broad-phase): AABB check (increment stats->aabb_tests++).
    * Phase 2 (Narrow-phase): Exact check primitive_contains_point
    * (increment stats->exact_tests++). Return topmost matching primitive.
    */
-  (void)pt;
-  (void)stats;
-  return NULL;
 }
 
 // ============================================================================
