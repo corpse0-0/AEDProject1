@@ -355,32 +355,44 @@ static void merge_by_z(Primitive** arr, Primitive** temp_arr, size_t left,
  */
 static void merge_sort_by_z(Primitive** arr, Primitive** temp_arr, size_t left,
                             size_t right, SortStats* stats) {
-  // TODO: Implement recursive MergeSort
+  if(left >= right){ return; }
+  size_t mid = left + (right-left) / 2;
+
+  merge_sort_by_z(arr, temp_arr, left, mid, stats);
+  merge_sort_by_z(arr, temp_arr, mid+1, right, stats);
+
+  merge_by_z(arr, temp_arr, left, mid, right, stats);
+
   // - Base case: if left >= right, return.
   // - Calculate mid = left + (right - left) / 2.
   // - Recursively call merge_sort_by_z for [left..mid] and [mid+1..right].
   // - Call merge_by_z to merge the two sorted halves.
-
-  (void)arr;
-  (void)temp_arr;
-  (void)left;
-  (void)right;
-  (void)stats;
 }
 
 void vector_scene_sort_by_z(VectorScene* scene, bool use_fast_sort,
                             SortStats* stats) {
   if (scene == NULL || scene->count < 2) return;
 
-  /* TODO: Student Implementation & Benchmark Study
-   * Reset stats (comparisons = 0, swaps = 0).
+  if(stats != NULL){
+    stats->comparisons = 0;
+    stats->swaps = 0;
+  }
+
+  if(!use_fast_sort){ 
+    insertion_sort_by_z(scene->primitives, scene->count, stats);
+  }else{
+    Primitive** temp_arr = malloc(scene->count * sizeof(Primitive*)); 
+    if(temp_arr == NULL){
+      return;
+    }
+    merge_sort_by_z(scene->primitives, temp_arr, 0, scene->count -1, stats);
+    free(temp_arr);
+  }
+  /* Reset stats (comparisons = 0, swaps = 0).
    * If use_fast_sort is false: execute O(N^2) sort (Insertion Sort).
    * If use_fast_sort is true: execute O(N log N) sort (MergeSort).
    * Increment stats->comparisons and stats->swaps on every check/swap!
    */
-
-  (void)use_fast_sort;
-  (void)stats;
 }
 
 Primitive* vector_scene_pick_top_primitive(const VectorScene* scene, Point pt,
