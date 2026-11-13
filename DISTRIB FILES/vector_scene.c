@@ -446,21 +446,94 @@ bool vector_scene_render(const VectorScene* scene,
   if (!scene || !output_filename) {
     return false;
   }
+    memcpy(sorted, scene->primitives, scene->count * sizeof(Primitive*));
+
+    for (size_t i = 1; i < scene->count; i++) {
+      Primitive* key = sorted[i];
+      size_t j = i;
+      while (j > 0 && sorted[j - 1]->z_index > key->z_index) {
+        sorted[j] = sorted[j - 1];
+        j--;
+      }
+      sorted[j] = key;
+    }
+  }
+
+  for (size_t i = 0; i < scene->count; i++) {
+    Primitive* p = sorted[i];
+    if (!p) {
+      continue;
+    }
+
+    primitive_update_aabb(p);
+    BoundingBox box = primitive_get_aabb(p);
+
+    double x_min_d = ceil(box.min.x - 0.5);
+    double x_max_d = floor(box.max.x - 0.5);
+    double y_min_d = ceil(box.min.y - 0.5);
+    double y_max_d = floor(box.max.y - 0.5);
+
+    if (x_max_d < 0.0 || y_max_d < 0.0 ||
+        x_min_d > (double)(width - 1) ||
+        y_min_d > (double)(height - 1)) {
+      continue;
+    }
+
+    if (x_min_d < 0.0) x_min_d = 0.0;
+    if (y_min_d < 0.0) y_min_d = 0.0;
+    if (x_max_d > (double)(width - 1)) x_max_d = (double)(width - 1);
+    if (y_max_d > (double)(height - 1)) y_max_d = (double)(height - 1);
+
+    if (x_min_d > x_max_d || y_min_d > y_max_d) {
+      continue;
+    }
+
+    int x_min = (int)x_min_d;
+    int x_max = (int)x_max_d;
+    int y_min = (int)y_min_d;
+    int y_max = (int)y_max_d;
+
+    double alpha = p->alpha;
+    if (alpha < 0.0) alpha = 0.0;
+    if (alpha > 1.0) alpha = 1.0;
+
+    for (int y = y_min; y <= y_max; y++) {
+      for (int x = x_min; x <= x_max; x++) {
+        Point pixel_center = {(double)x + 0.5, (double)y + 0.5};
+        if (!primitive_contains_point(p, pixel_center)) {
+          continue;
+        }
+
+        size_t offset = ((size_t)y * width + (size_t)x) * 3;
+        pixel_buffer[offset] = (uint8_t)lround(
+            p->color.r * alpha + pixel_buffer[offset] * (1.0 - alpha));
+        pixel_buffer[offset + 1] = (uint8_t)lround(
+            p->color.g * alpha + pixel_buffer[offset + 1] * (1.0 - alpha));
+        pixel_buffer[offset + 2] = (uint8_t)lround(
+            p->color.b * alpha + pixel_buffer[offset + 2] * (1.0 - alpha));
+      }
+    }
+  }
+
+  bool saved = save_ppm_image(output_filename, scene->width, scene->height,
+                              pixel_buffer);
+  free(sorted);
+  free(pixel_buffer);
+  return saved;
 
   /* TODO: Student Implementation & Benchmark Study
-   * 1. Allocate pixel buffer (width * height * 3) and fill bg_color.
-   * 2. Sort primitives by ascending z_index (Painter's Algorithm).
+   * 1. Allocate pixel buffer (width * height * 3) and fill bg_color. Done
+   * 2. Sort primitives by ascending z_index (Painter's Algorithm). Done
    * 3. For each primitive:
-   *    a) Update AABB.
+   *    a) Update AABB. Done
    *    b) Clip pixel bounds [xMin..xMax] x [yMin..yMax] against
-   *       [0..widht-1] x [0..height-1]
-   *    c) For each pixel in the clipped domain
-   *    d) Test primitive_contains_point(p, pixel_center).
-   *    e) Perform Alpha Blending compositing.
-   * 4. Call save_ppm_image(output_filename, width, height, pixel_buffer).
-   * 5. Free buffers and return true.
+   *       [0..widht-1] x [0..height-1] Done
+   *    c) For each pixel in the clipped domain Done
+   *    d) Test primitive_contains_point(p, pixel_center). Done
+   *    e) Perform Alpha Blending compositing. Done
+   * 4. Call save_ppm_image(output_filename, width, height, pixel_buffer). Done
+   * 5. Free buffers and return true. Done
    */
-  return false;
 }
 
 // ============================================================================
