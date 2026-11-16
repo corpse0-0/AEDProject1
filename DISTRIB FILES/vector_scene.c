@@ -446,6 +446,33 @@ bool vector_scene_render(const VectorScene* scene,
   if (!scene || !output_filename) {
     return false;
   }
+
+
+  int width = scene->width;
+  int height = scene->height;
+  if (width <= 0 || height <= 0) {
+    return false;
+  }
+
+  uint8_t* pixel_buffer = malloc((size_t)width * height * 3);
+  if (!pixel_buffer) {
+    return false;
+  }
+
+  for (size_t i = 0; i < (size_t)width * height; i++) {
+    pixel_buffer[i * 3] = scene->bg_color.r;
+    pixel_buffer[i * 3 + 1] = scene->bg_color.g;
+    pixel_buffer[i * 3 + 2] = scene->bg_color.b;
+  }
+
+  Primitive** sorted = NULL;
+  if (scene->count > 0) {
+    sorted = malloc(scene->count * sizeof(Primitive*));
+    if (!sorted) {
+      free(pixel_buffer);
+      return false;
+    }
+
     memcpy(sorted, scene->primitives, scene->count * sizeof(Primitive*));
 
     for (size_t i = 1; i < scene->count; i++) {
@@ -520,7 +547,7 @@ bool vector_scene_render(const VectorScene* scene,
   free(sorted);
   free(pixel_buffer);
   return saved;
-
+}
   /* TODO: Student Implementation & Benchmark Study
    * 1. Allocate pixel buffer (width * height * 3) and fill bg_color. Done
    * 2. Sort primitives by ascending z_index (Painter's Algorithm). Done
@@ -534,7 +561,7 @@ bool vector_scene_render(const VectorScene* scene,
    * 4. Call save_ppm_image(output_filename, width, height, pixel_buffer). Done
    * 5. Free buffers and return true. Done
    */
-}
+
 
 // ============================================================================
 // FILE INPUT / OUTPUT (PROVIDED TO STUDENTS)
