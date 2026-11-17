@@ -269,14 +269,14 @@ static void insertion_sort_by_z(Primitive** arr, size_t count,
   
   for (size_t i = 1; i < count; i++){
     Primitive* key = arr[i];
-    size_t j = i-1;
+    size_t j = i;
 
     while(j > 0){
       if(stats) stats->comparisons++;
       if(arr[j-1]->z_index <= key->z_index){
         break;
       }
-      arr[j + 1] = arr[j];
+      arr[j] = arr[j-1];
       if(stats) stats->swaps++;
       j--;
     }
