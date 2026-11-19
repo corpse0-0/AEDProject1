@@ -127,6 +127,11 @@ Primitive* vector_scene_get_primitive_by_id(const VectorScene* scene, int id) {
 // SCENE LIFECYCLE (STUDENTS MUST COMPLETE)
 // ============================================================================
 
+/**
+ * Cria uma cena vazia com as dimensões width x height e a cor de fundo
+ * bg_color. Devolve NULL se width ou height forem <= 0, ou se a alocação
+ * falhar.
+ */
 VectorScene* vector_scene_create(int width, int height, Color bg_color) {
   if (width <= 0 || height <= 0) {
     return NULL;
@@ -139,7 +144,7 @@ VectorScene* vector_scene_create(int width, int height, Color bg_color) {
   
   scene->primitives = malloc(INITIAL_SCENE_CAPACITY * sizeof(Primitive*));
   if (scene->primitives == NULL) {
-    free(scene);
+    free(scene);/* Evita fuga de memória se o segundo malloc falhar */
     return NULL;
   }
 
@@ -153,6 +158,11 @@ VectorScene* vector_scene_create(int width, int height, Color bg_color) {
   return scene;
 }
 
+/**
+ * Destrói a cena, libertando a sua memória e a de todas as primitivas que
+ * contém (através de primitive_destroy). Depois da chamada, scene e as suas
+ * primitivas deixam de ser válidos. Se scene for NULL, não faz nada.
+ */
 void vector_scene_destroy(VectorScene* scene) {
   if (!scene) {
     return;
@@ -170,11 +180,18 @@ void vector_scene_destroy(VectorScene* scene) {
 // COLLECTION MANAGEMENT (STUDENTS MUST COMPLETE)
 // ============================================================================
 
+/**
+ * Adiciona a primitiva p à cena. Se p->id < 0, é-lhe atribuído um id
+ * automático. Devolve o id da primitiva, ou -1 se scene ou p forem NULL ou
+ * se a alocação falhar (neste caso p não é libertada). Em caso de sucesso,
+ * a cena passa a ser dona de p.
+ */
 int vector_scene_add_primitive(VectorScene* scene, Primitive* p){
   if (!scene || !p) {
     return -1;
   }
 
+  /* Array cheio: duplica a capacidade (começa em 4) */
   if (scene->count >= scene->capacity) {
     size_t new_capacity = (scene->capacity == 0) ? 4 : scene->capacity * 2;
     Primitive** new_primitives = (Primitive**)realloc(scene->primitives, new_capacity * sizeof(Primitive*));
