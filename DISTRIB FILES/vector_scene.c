@@ -728,7 +728,7 @@ VectorScene* vector_scene_load_text(const char* filename) {
           Primitive* p = primitive_create_polygon(id, color, alpha, z_index);
           if (p) {
             char* ptr = line;
-            for (int k = 0; k < 7; k++) {
+            for (int k = 0; k < 8; k++) {
               while (*ptr && *ptr != ' ' && *ptr != '\t') {
                 ptr++;
               }
