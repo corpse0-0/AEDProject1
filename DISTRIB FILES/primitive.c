@@ -255,7 +255,7 @@ Primitive* primitive_create_segment(int id, Point p1, Point p2, Color color,
   return p;
 }
 /**
- * Cria e aloca dinamicamente uma primitiva do tipo retângulo.
+ * Cria e aloca dinamicamente uma primitiva do tipo poligono.
  * Devolve NULL se alpha estiver fora de [0, 1],
  * ou se a alocação falhar.
  */
