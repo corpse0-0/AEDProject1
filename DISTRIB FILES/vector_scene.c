@@ -205,12 +205,18 @@ int vector_scene_add_primitive(VectorScene* scene, Primitive* p){
   }
 
   scene->primitives[scene->count++] = p;
-
+  /* Garante que a AABB está válida antes de a primitiva entrar na cena */
   primitive_update_aabb(p);
 
   return p->id;
 }
 
+/**
+ * Remove da cena a primitiva com o id indicado e destrói-a. As restantes
+ * primitivas mantêm a ordem relativa. Devolve true em caso de sucesso.
+ * Devolve false se scene for NULL, se id < 0 ou se não existir nenhuma
+ * primitiva com esse id.
+ */
 bool vector_scene_remove_primitive(VectorScene* scene, int id) {
   if (!scene || id < 0) {
     return false;
@@ -220,6 +226,7 @@ bool vector_scene_remove_primitive(VectorScene* scene, int id) {
     if(scene->primitives[i]->id == id){
       primitive_destroy(scene->primitives[i]);
       
+      /* Desloca as seguintes para tapar o espaço, mantendo a ordem */
       for (size_t j = i; j + 1 < scene->count; j++) {
         scene->primitives[j] = scene->primitives[j + 1];
       }
@@ -234,6 +241,11 @@ bool vector_scene_remove_primitive(VectorScene* scene, int id) {
 // MANIPULATION AND TRANSFORMATIONS (STUDENTS MUST COMPLETE)
 // ============================================================================
 
+/**
+ * Faz a translação pelo vetor (dx, dy) a primitiva da cena com o id indicado.
+ * Devolve true em caso de sucesso. Devolve false se scene for NULL ou se não
+ * existir nenhuma primitiva com esse id.
+ */
 bool vector_scene_translate_primitive(VectorScene* scene, int id, double dx,
                                       double dy) {
   if (!scene) {
@@ -249,6 +261,11 @@ bool vector_scene_translate_primitive(VectorScene* scene, int id, double dx,
   return false;
 }
 
+/**
+ * Altera o z_index da primitiva da cena com o id indicado. O z_index define a
+ * ordem de desenho. Devolve true em caso de sucesso. Devolve false se scene
+ * for NULL ou se não existir nenhuma primitiva com esse id.
+ */
 bool vector_scene_set_z_index(VectorScene* scene, int id, int new_z_index) {
   if (!scene) {
     return false;
@@ -287,7 +304,7 @@ static void insertion_sort_by_z(Primitive** arr, size_t count,
   for (size_t i = 1; i < count; i++){
     Primitive* key = arr[i];
     size_t j = i;
-
+    /* Desloca para a direita os elementos com z_index maior que o de key */
     while(j > 0){
       if(stats) stats->comparisons++;
       if(arr[j-1]->z_index <= key->z_index){
@@ -299,13 +316,6 @@ static void insertion_sort_by_z(Primitive** arr, size_t count,
     }
     arr[j] = key;
   }
-
-  // - Handle edge cases (count < 2).
-  // - Iterate through elements from index 1 to count - 1.
-  // - Compare arr[j]->z_index with key->z_index.
-  // - Increment stats->comparisons for every z_index comparison made.
-  // - Shift elements right and increment stats->swaps for every move.
-  // - Insert key in its correct sorted position.
 }
 
 /**
@@ -329,15 +339,18 @@ static void merge_by_z(Primitive** arr, Primitive** temp_arr, size_t left,
   size_t k = left;
 
   while (i <= mid && j <= right) {
-    if (stats) stats->comparisons++;                 /* uma comparação de z_index */
-    if (arr[i]->z_index <= arr[j]->z_index) {        /* <= para ser estável */
+    if (stats) stats->comparisons++;
+    /* <= para ser estável */
+    if (arr[i]->z_index <= arr[j]->z_index) {        
       temp_arr[k++] = arr[i++];
     } else {
       temp_arr[k++] = arr[j++];
     }
-    if (stats) stats->swaps++;                       /* uma cópia para o temp */
+    /* Uma cópia para o temp */
+    if (stats) stats->swaps++; 
   }
 
+  /*Insere a metade que sobrou, que já está ordenada*/
   while (i<=mid){
     temp_arr[k++] = arr[i++];
     if(stats) stats->swaps++;
@@ -347,15 +360,12 @@ static void merge_by_z(Primitive** arr, Primitive** temp_arr, size_t left,
     if(stats) stats->swaps++;
   }
 
+
+  /* Copia o resultado de volta para arr */
   for(size_t l = left; l <= right; l++){
     arr[l] = temp_arr[l];
     if(stats) stats->swaps++;
   }
-  
-  // - Merge sorted halves [left..mid] and [mid+1..right] into temp_arr.
-  // - Compare z_index of primitives and increment stats->comparisons.
-  // - Increment stats->swaps when copying elements to temp_arr and back to arr.
-  // - Copy merged elements back from temp_arr to arr[left..right].
 }
 
 /**
@@ -370,6 +380,7 @@ static void merge_by_z(Primitive** arr, Primitive** temp_arr, size_t left,
  * @param right Ending index of the subarray to sort.
  * @param stats Pointer to SortStats structure to record performance metrics.
  */
+ /*Ordena o array [left...right]*/
 static void merge_sort_by_z(Primitive** arr, Primitive** temp_arr, size_t left,
                             size_t right, SortStats* stats) {
   if(left >= right){ return; }
@@ -379,13 +390,16 @@ static void merge_sort_by_z(Primitive** arr, Primitive** temp_arr, size_t left,
   merge_sort_by_z(arr, temp_arr, mid+1, right, stats);
 
   merge_by_z(arr, temp_arr, left, mid, right, stats);
-
-  // - Base case: if left >= right, return.
-  // - Calculate mid = left + (right - left) / 2.
-  // - Recursively call merge_sort_by_z for [left..mid] and [mid+1..right].
-  // - Call merge_by_z to merge the two sorted halves.
 }
 
+/**
+ * Ordena as primitivas da cena por z_index, por ordem crescente. A ordenação
+ * é estável: primitivas com o mesmo z_index mantêm a ordem relativa.
+ * Se use_fast_sort for false usa Insertion Sort, O(N^2); caso contrário usa
+ * MergeSort, O(N log N). Se stats não for NULL, as métricas são repostas a
+ * zero e depois registadas durante a ordenação.
+ * Se scene for NULL ou tiver menos de 2 primitivas, não faz nada.
+ */
 void vector_scene_sort_by_z(VectorScene* scene, bool use_fast_sort,
                             SortStats* stats) {
   if (scene == NULL || scene->count < 2) return;
@@ -399,19 +413,24 @@ void vector_scene_sort_by_z(VectorScene* scene, bool use_fast_sort,
     insertion_sort_by_z(scene->primitives, scene->count, stats);
   }else{
     Primitive** temp_arr = malloc(scene->count * sizeof(Primitive*)); 
+    /* Sem memória para o array auxiliar: a cena não é ordenada */
     if(temp_arr == NULL){
       return;
     }
     merge_sort_by_z(scene->primitives, temp_arr, 0, scene->count -1, stats);
     free(temp_arr);
   }
-  /* Reset stats (comparisons = 0, swaps = 0).
-   * If use_fast_sort is false: execute O(N^2) sort (Insertion Sort).
-   * If use_fast_sort is true: execute O(N log N) sort (MergeSort).
-   * Increment stats->comparisons and stats->swaps on every check/swap!
-   */
 }
 
+/**
+ * Devolve a primitiva mais acima da cena que contém o ponto pt, ou NULL se
+ * nenhuma o contiver ou se scene for NULL. 
+ * Assume que a cena está ordenada por z_index: percorre da última para a
+ * primeira primitiva e devolve a primeira que contém pt.
+ * Se is_opt for true, faz primeiro um teste rápido com a AABB e só depois o
+ * teste exato. Se stats não for NULL, é reposto a zero e regista o número
+ * de testes com AABB e de testes exatos.
+ */
 Primitive* vector_scene_pick_top_primitive(const VectorScene* scene, Point pt,
                                            bool is_opt, PickStats* stats) {
   if (!scene) {
@@ -430,6 +449,8 @@ Primitive* vector_scene_pick_top_primitive(const VectorScene* scene, Point pt,
       BoundingBox box = primitive_get_aabb(prim);
       if(stats)stats->aabb_tests++;
 
+      /* Fora da AABB (alargada pela tolerância do segmento): salta o teste
+      exato, que não poderia aceitar o ponto */
       double tol = (prim->type == PRIM_SEGMENT) ? 1.0 : 0.0;
       if (pt.x < box.min.x - tol || pt.x > box.max.x + tol ||
           pt.y < box.min.y - tol || pt.y > box.max.y + tol) {
@@ -445,19 +466,21 @@ Primitive* vector_scene_pick_top_primitive(const VectorScene* scene, Point pt,
   }
 
   return NULL;
-
-  /* Reset stats (aabb_tests = 0, exact_tests = 0).
-   * Iterate primitives backward from top layer (highest z_index) to lowest.
-   * Phase 1 (Broad-phase): AABB check (increment stats->aabb_tests++).
-   * Phase 2 (Narrow-phase): Exact check primitive_contains_point
-   * (increment stats->exact_tests++). Return topmost matching primitive.
-   */
 }
 
 // ============================================================================
 // RENDERING / RASTERIZATION (STUDENTS MUST COMPLETE)
 // ============================================================================
 
+/**
+ * Renderiza a cena para um ficheiro de imagem PPM.
+ * Usa o algoritmo do pintor: as primitivas são desenhadas por ordem
+ * crescente de z_index (as de cima sobrepõem-se às de baixo) e combinadas
+ * com o fundo por alpha blending. A ordem da cena não é alterada.
+ * Devolve true se o ficheiro foi gravado. Devolve false se scene ou
+ * output_filename forem NULL, se as dimensões forem inválidas, se a
+ * alocação falhar ou se a gravação falhar.
+ */
 bool vector_scene_render(const VectorScene* scene,
                          const char* output_filename) {
   if (!scene || !output_filename) {
@@ -475,13 +498,15 @@ bool vector_scene_render(const VectorScene* scene,
   if (!pixel_buffer) {
     return false;
   }
-
+  /* Preenche o buffer com a cor de fundo */
   for (size_t i = 0; i < (size_t)width * height; i++) {
     pixel_buffer[i * 3] = scene->bg_color.r;
     pixel_buffer[i * 3 + 1] = scene->bg_color.g;
     pixel_buffer[i * 3 + 2] = scene->bg_color.b;
   }
 
+  /* Ordena uma cópia do array, para não alterar a ordem da cena.
+     Se a cena estiver vazia, sorted fica NULL e o ciclo abaixo não corre */
   Primitive** sorted = NULL;
   if (scene->count > 0) {
     sorted = malloc(scene->count * sizeof(Primitive*));
@@ -491,16 +516,7 @@ bool vector_scene_render(const VectorScene* scene,
     }
 
     memcpy(sorted, scene->primitives, scene->count * sizeof(Primitive*));
-
-    for (size_t i = 1; i < scene->count; i++) {
-      Primitive* key = sorted[i];
-      size_t j = i;
-      while (j > 0 && sorted[j - 1]->z_index > key->z_index) {
-        sorted[j] = sorted[j - 1];
-        j--;
-      }
-      sorted[j] = key;
-    }
+    insertion_sort_by_z(sorted, scene->count, NULL);
   }
 
   for (size_t i = 0; i < scene->count; i++) {
@@ -509,20 +525,22 @@ bool vector_scene_render(const VectorScene* scene,
       continue;
     }
 
-    primitive_update_aabb(p);
     BoundingBox box = primitive_get_aabb(p);
-
+    /* O pixel (x, y) tem o centro em (x + 0.5, y + 0.5). Só interessam os
+    pixéis cujo centro cai dentro da AABB */
     double x_min_d = ceil(box.min.x - 0.5);
     double x_max_d = floor(box.max.x - 0.5);
     double y_min_d = ceil(box.min.y - 0.5);
     double y_max_d = floor(box.max.y - 0.5);
 
+    /* Fora da imagem: nada a desenhar */
     if (x_max_d < 0.0 || y_max_d < 0.0 ||
         x_min_d > (double)(width - 1) ||
         y_min_d > (double)(height - 1)) {
       continue;
     }
 
+    /* Clipping aos limites da imagem */
     if (x_min_d < 0.0) x_min_d = 0.0;
     if (y_min_d < 0.0) y_min_d = 0.0;
     if (x_max_d > (double)(width - 1)) x_max_d = (double)(width - 1);
@@ -548,6 +566,7 @@ bool vector_scene_render(const VectorScene* scene,
           continue;
         }
 
+        /* Alpha blending: cor * alpha + fundo * (1 - alpha) */
         size_t offset = ((size_t)y * width + (size_t)x) * 3;
         pixel_buffer[offset] = (uint8_t)lround(
             p->color.r * alpha + pixel_buffer[offset] * (1.0 - alpha));
@@ -565,20 +584,6 @@ bool vector_scene_render(const VectorScene* scene,
   free(pixel_buffer);
   return saved;
 }
-  /* TODO: Student Implementation & Benchmark Study
-   * 1. Allocate pixel buffer (width * height * 3) and fill bg_color. Done
-   * 2. Sort primitives by ascending z_index (Painter's Algorithm). Done
-   * 3. For each primitive:
-   *    a) Update AABB. Done
-   *    b) Clip pixel bounds [xMin..xMax] x [yMin..yMax] against
-   *       [0..widht-1] x [0..height-1] Done
-   *    c) For each pixel in the clipped domain Done
-   *    d) Test primitive_contains_point(p, pixel_center). Done
-   *    e) Perform Alpha Blending compositing. Done
-   * 4. Call save_ppm_image(output_filename, width, height, pixel_buffer). Done
-   * 5. Free buffers and return true. Done
-   */
-
 
 // ============================================================================
 // FILE INPUT / OUTPUT (PROVIDED TO STUDENTS)
